@@ -2,6 +2,7 @@ const fs = require('fs');
 
 const puppeteer = require('puppeteer');
 const loadJsonFile = require('load-json-file');
+const mongoose = require('mongoose');
 const writeJsonFile = require('write-json-file');
 
 const CREDENTIALS = require('./credentials.js');
