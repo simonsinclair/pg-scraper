@@ -1,7 +1,12 @@
+const fs = require('fs');
+
 const puppeteer = require('puppeteer');
+const loadJsonFile = require('load-json-file');
+const writeJsonFile = require('write-json-file');
 
 const CREDENTIALS = require('./credentials.js');
 
+const havePreviousSession = fs.existsSync('./session.json');
 
 // APP
 //////
@@ -28,30 +33,49 @@ const N_PEOPLE_SELECTOR = '#main-content > div:nth-child(2) > div > div > div:nt
 
 async function run() {
   const browser = await puppeteer.launch({
-    headless: false,
+    // headless: false,
   });
 
   const page = await browser.newPage();
 
-  // /login
-  //
+  if (havePreviousSession) {
+    const cookies = await loadJsonFile('./session.json');
 
-  await page.goto('https://www.puregym.com/login/');
+    if (cookies.length !== 0) {
+      for (let cookie of cookies) {
+        await page.setCookie(cookie);
+      }
+    }
 
-  await page.click(USERNAME_SELECTOR);
-  await page.keyboard.type(CREDENTIALS.username);
+    await page.goto('https://www.puregym.com/members/');
 
-  await page.click(PASSWORD_SELECTOR);
-  await page.keyboard.type(CREDENTIALS.password);
+  } else {
 
-  await page.click(LOGIN_SUBMIT_SELECTOR);
+    // Login
+    //
 
-  await page.waitForNavigation();
+    await page.goto('https://www.puregym.com/login/');
+
+    await page.click(USERNAME_SELECTOR);
+    await page.keyboard.type(CREDENTIALS.username);
+
+    await page.click(PASSWORD_SELECTOR);
+    await page.keyboard.type(CREDENTIALS.password);
+
+    await page.click(LOGIN_SUBMIT_SELECTOR);
+
+    await page.waitForNavigation();
+
+    // Store session
+    const cookiesObject = await page.cookies();
+    await writeJsonFile('./session.json', cookiesObject, { indent: 2 });
+  }
 
 
   // /members
   //
 
+  // Capture number of people
   const numPeopleInMyGym = await page.evaluate((selector) => {
     const element = document.querySelector(selector);
     return element.innerHTML.split(' ')[0];
@@ -59,7 +83,7 @@ async function run() {
 
   console.log(numPeopleInMyGym);
 
-  // browser.close();
+  browser.close();
 }
 
 run();
