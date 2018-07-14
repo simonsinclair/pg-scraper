@@ -58,10 +58,11 @@ async function run() {
 
   }
 
-  // Get people numbers!
-  const numPeopleInMyGym = await getNumPeopleInMyGym(page);
-  console.log(numPeopleInMyGym);
 
+  // Get & Store people count.
+  //
+  const peopleCount = await getPeopleCount(page);
+  console.log('time:', Date.now(), 'count:', peopleCount);
   browser.close();
 }
 
@@ -101,11 +102,17 @@ async function login(page) {
   await saveSessionCookies(page);
 }
 
-async function getNumPeopleInMyGym(page) {
-  const numPeopleInMyGym = await page.evaluate((selector) => {
-    const element = document.querySelector(selector);
-    return element.innerHTML.split(' ')[0];
+async function getPeopleCount(page) {
+  const peopleCount = await page.evaluate((selector) => {
+    const value = document.querySelector(selector).innerHTML;
+
+    // When there are fewer than 20 people, PG doesn't
+    // give us a count, so mark that result '-1'.
+    if (value.startsWith('Fewer than')) { return -1; }
+
+    // Return matched digits as a number.
+    return value.match(/\d+/).map(Number);
   }, N_PEOPLE_SELECTOR);
 
-  return parseInt(numPeopleInMyGym);
+  return peopleCount;
 }
