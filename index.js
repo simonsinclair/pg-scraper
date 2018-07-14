@@ -60,8 +60,15 @@ async function run() {
 
   // Get & Store people count.
   //
+
+  await mongoose.connect('mongodb://localhost/pgScraper');
+  const db = mongoose.connection;
+
   const peopleCount = await getPeopleCount(page);
   console.log('time:', Date.now(), 'count:', peopleCount);
+
+  // Clean up.
+  mongoose.disconnect();
   browser.close();
 }
 
