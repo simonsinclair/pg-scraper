@@ -5,14 +5,13 @@ const loadJsonFile = require('load-json-file');
 const mongoose = require('mongoose');
 const writeJsonFile = require('write-json-file');
 
-const CREDENTIALS = require('./credentials.js');
-
-const havePreviousSession = fs.existsSync('./session.json');
-
 
 /////////
 // APP //
 /////////
+
+const CREDENTIALS = require('./credentials.js');
+const havePreviousSession = fs.existsSync('./session.json');
 
 
 // /login/
@@ -47,7 +46,7 @@ async function run() {
     await loadPreviousSessionCookies(page);
     const membersPageResponse = await page.goto('https://www.puregym.com/members/');
 
-    // If we got returned to the login page, then login.
+    // If we got redirected to the login page, then login.
     if (LOGIN_URL_REGEX.test(membersPageResponse.url())) {
       await login(page);
     }
