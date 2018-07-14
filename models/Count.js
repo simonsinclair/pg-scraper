@@ -12,7 +12,7 @@ const countSchema = new mongoose.Schema({
   total_samples: Number,
 
   // Data resolution - per 15 mins.
-  counts: [ Number ],
+  values: [ Number ],
 });
 
 const Count = mongoose.model('Count', countSchema);
