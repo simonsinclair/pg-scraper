@@ -12,6 +12,7 @@ const writeJsonFile = require('write-json-file');
 
 const CREDENTIALS = require('./credentials.js');
 const havePreviousSession = fs.existsSync('./session.json');
+const Count = require('./models/Count.js');
 
 
 // /login/
@@ -58,17 +59,18 @@ async function run() {
   }
 
 
-  // Get & Store people count.
-  //
-
-  await mongoose.connect('mongodb://localhost/pgScraper');
-  const db = mongoose.connection;
-
+  // Get.
   const peopleCount = await getPeopleCount(page);
-  console.log('time:', Date.now(), 'count:', peopleCount);
+  const count = new Count({
+    timestamp: peopleCount.timestamp,
+    value: peopleCount.value,
+  });
 
-  // Clean up.
+  // Store.
+  await mongoose.connect('mongodb://localhost/pgScraper');
+  await count.save();
   mongoose.disconnect();
+
   browser.close();
 }
 
