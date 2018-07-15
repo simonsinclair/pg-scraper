@@ -112,13 +112,16 @@ async function getPeopleCount(page) {
   const peopleCount = await page.evaluate((selector) => {
     const value = document.querySelector(selector).innerHTML;
 
-    // When there are fewer than 20 people, PG doesn't
-    // give us a count, so mark that result '-1'.
-    if (value.startsWith('Fewer than')) { return -1; }
+    // When there are fewer than 20 people, PG doesn't give us
+    // a count - mark the result so we can process later.
+    if (value.startsWith('Fewer than')) { return -20; }
 
     // Return matched digits as a number.
-    return value.match(/\d+/).map(Number);
+    return value.match(/\d+/).map(Number)[0];
   }, N_PEOPLE_SELECTOR);
 
-  return peopleCount;
+  return {
+    timestamp: Date.now(),
+    value: peopleCount,
+  };
 }
