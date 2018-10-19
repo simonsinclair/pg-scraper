@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 
 const puppeteer = require('puppeteer');
 const loadJsonFile = require('load-json-file');
@@ -11,10 +12,31 @@ const winston = require('winston');
 // APP //
 /////////
 
+const BASE_PATH = `${os.homedir()}/Desktop`;
+
+const logger = winston.createLogger({
+  format: winston.format.combine(
+    // winston.format.colorize(),
+    winston.format.timestamp(),
+    // winston.format.align(),
+    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`),
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({
+      filename: `${BASE_PATH}/pg-scraper.log`,
+      handleExceptions: true,
+    }),
+  ],
+});
+const profiler = logger.startTimer();
+logger.info('Starting.');
+
 const CREDENTIALS = require('./credentials.js');
-const havePreviousSession = fs.existsSync('./session.json');
 const Count = require('./models/Count.js');
 
+const havePreviousSession = fs.existsSync(`${BASE_PATH}/session.json`);
+logger.info(`havePreviousSession ${havePreviousSession}`);
 
 // /login/
 //
@@ -46,10 +68,12 @@ async function run() {
   if (havePreviousSession) {
 
     await loadPreviousSessionCookies(page);
+    logger.info('Going to members page.');
     const membersPageResponse = await page.goto('https://www.puregym.com/members/');
 
     // If we got redirected to the login page, then login.
     if (LOGIN_URL_REGEX.test(membersPageResponse.url())) {
+      logger.info('Returned to login page.');
       await login(page);
     }
 
@@ -75,13 +99,16 @@ async function run() {
   browser.close();
 }
 
-run();
-
+run()
+  .then(() => {
+    profiler.done();
+  });
 
 // Functions
 //
 
 async function loadPreviousSessionCookies(page) {
+  logger.info('loadPreviousSessionCookies');
   const cookies = await loadJsonFile('./session.json');
 
   if (cookies.length !== 0) {
@@ -92,11 +119,13 @@ async function loadPreviousSessionCookies(page) {
 }
 
 async function saveSessionCookies(page) {
+  logger.info('saveSessionCookies');
   const cookiesObject = await page.cookies();
-  await writeJsonFile('./session.json', cookiesObject, { indent: 2 });
+  await writeJsonFile(`${BASE_PATH}/session.json`, cookiesObject, { indent: 2 });
 }
 
 async function login(page) {
+  logger.info('login');
   await page.goto('https://www.puregym.com/login/');
 
   await page.click(USERNAME_SELECTOR);
@@ -112,6 +141,7 @@ async function login(page) {
 }
 
 async function getPeopleCount(page) {
+  logger.info('getPeopleCount');
   const peopleCount = await page.evaluate((selector) => {
     const value = document.querySelector(selector).innerHTML;
 
